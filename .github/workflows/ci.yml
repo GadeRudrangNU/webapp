@@ -1,6 +1,9 @@
-name: CI - Integration Tests
+name: Register CI Check
 
 on:
+  # lets you run it once manually to "register" the status check name immediately
+  workflow_dispatch:
+  # runs on PRs targeting upstream and has access to org repo secrets
   pull_request_target:
     branches: ["upstream"]
     types: [opened, synchronize, reopened]
