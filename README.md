@@ -128,9 +128,5 @@ This assignment demonstrates:
 - Continuous Integration using GitHub Actions
 - Proper Git workflows and branch protection
 - Secure configuration management
-<<<<<<< HEAD
-- Robust error handling and validation
-=======
-- Robust error handling and validation
 
->>>>>>> 1510f19 (added github actions workflow)
+- Robust error handling and validation
