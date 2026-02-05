@@ -1,11 +1,9 @@
 name: Integration Tests CI
 
 on:
-  # lets you run it once manually to "register" the status check name immediately
   workflow_dispatch:
-  # runs on PRs targeting upstream and has access to org repo secrets
   pull_request_target:
-    branches: ["upstream"]
+    branches: ["master"]
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -17,7 +15,7 @@ concurrency:
 
 jobs:
   test:
-    name: test   # ✅ matches your friend's job name style
+    name: test
     runs-on: ubuntu-latest
 
     services:
@@ -30,7 +28,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }}"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
