@@ -38,4 +38,8 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma migrate deploy
+<<<<<<< HEAD
       - run: npm run test:ci
+=======
+      - run: npm run test:ci
+>>>>>>> 1510f19 (added github actions workflow)

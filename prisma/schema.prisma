@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  username        String   @unique
+  first_name      String
+  last_name       String
+  password        String
+  account_created DateTime @default(now())
+  account_updated DateTime @updatedAt
+}
+
+model HealthCheck {
+  check_id       Int      @id @default(autoincrement())
+  check_datetime DateTime @default(now())
+
+  @@map("health_checks")
+  @@index([check_datetime])
+}
