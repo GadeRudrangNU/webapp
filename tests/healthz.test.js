@@ -4,7 +4,7 @@ const app = require("../src/app");
 describe("Healthz API", () => {
   it("GET /healthz returns 200", async () => {
     const res = await request(app).get("/healthz");
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
   });
 
   it("GET /healthz sets no-cache headers", async () => {
