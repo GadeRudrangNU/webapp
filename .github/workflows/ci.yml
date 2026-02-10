@@ -3,7 +3,7 @@ name: Integration Tests CI
 on:
   workflow_dispatch:
   pull_request_target:
-    branches: ["master"]
+    branches: ["upstream"]
     types: [opened, synchronize, reopened]
 
 permissions:
