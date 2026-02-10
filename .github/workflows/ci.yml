@@ -2,12 +2,16 @@ name: Integration Tests CI
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - upstream  
+  pull_request_target:
+    branches: ["upstream"]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -18,9 +22,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
+          POSTGRES_USER: ${{ secrets.CI_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.CI_DB_NAME }}
         ports:
           - 5432:5432
         options: >-
@@ -31,16 +35,19 @@ jobs:
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb?schema=public
+      DATABASE_URL: postgresql://${{ secrets.CI_DB_USER }}:${{ secrets.CI_DB_PASSWORD }}@localhost:5432/${{ secrets.CI_DB_NAME }}?schema=public
 
     steps:
-      - name: Checkout repository
+      - name: Checkout PR merge ref
         uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -52,4 +59,4 @@ jobs:
         run: npx prisma migrate deploy
 
       - name: Run tests
-        run: npm test
+        run: npm run test:ci
