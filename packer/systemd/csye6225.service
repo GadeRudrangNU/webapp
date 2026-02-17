@@ -1,0 +1,19 @@
+[Unit]
+Description=CSYE6225 WebApp
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=csye6225
+Group=csye6225
+WorkingDirectory=/opt/csye6225
+
+EnvironmentFile=/etc/csye6225/webapp.env
+
+ExecStart=/usr/bin/env node /opt/csye6225/src/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -122,7 +122,7 @@ This repository includes a **GitHub Actions workflow** for automated testing.
 
 ## Assignment Scope Summary
 ##demo
-This assignment demonstrates:
+  This assignment demonstrates:
 - Production-grade REST API design
 - Comprehensive integration testing
 - Continuous Integration using GitHub Actions

@@ -6,6 +6,8 @@ const healthzRoutes = require("./routes/healthz");
 const userRoutes = require("./routes/user");
 
 const app = express();
+const metadataRoute = require("./routes/metadata");
+app.use(metadataRoute);
 
 // Security headers
 app.use(helmet());
