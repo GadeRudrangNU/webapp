@@ -35,9 +35,9 @@ variable "gcp_zone" {
 
 # ---------------- AWS AMI ----------------
 source "amazon-ebs" "aws_ubuntu_2404" {
-  region        = var.aws_region
-  instance_type = "t2.micro"
-  ssh_username  = "ubuntu"
+  region                      = var.aws_region
+  instance_type               = "t2.micro"
+  ssh_username                = "ubuntu"
   associate_public_ip_address = true
   ssh_interface               = "public_ip"
 
@@ -58,14 +58,14 @@ source "amazon-ebs" "aws_ubuntu_2404" {
 
 # ---------------- GCP IMAGE ----------------
 source "googlecompute" "gcp_ubuntu_2404" {
-  project_id               = var.gcp_project_id
-  zone                     = var.gcp_zone
-  ssh_username             = "packer"
-  image_name               = "csye6225-gcp-{{timestamp}}"
-  image_family             = "csye6225"
-  image_description        = "CSYE6225 WebApp GCP Image"
-  source_image_family      = "ubuntu-2404-lts"
-  source_image_project_id  = "ubuntu-os-cloud"
+  project_id              = var.gcp_project_id
+  zone                    = var.gcp_zone
+  ssh_username            = "packer"
+  image_name              = "csye6225-gcp-{{timestamp}}"
+  image_family            = "csye6225"
+  image_description       = "CSYE6225 WebApp GCP Image"
+  source_image_family     = "ubuntu-2404-lts"
+  source_image_project_id = "ubuntu-os-cloud"
 }
 
 build {
