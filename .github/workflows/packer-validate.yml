@@ -1,0 +1,43 @@
+name: Packer Template Validation
+
+on:
+  pull_request:
+    branches: ["upstream"]
+
+permissions:
+  contents: read
+
+jobs:
+  packer-validation-check:
+    name: Packer Format & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+        with:
+          packer_version: "1.10.3"
+      - name: Install zip
+        run: sudo apt-get update -y && sudo apt-get install -y zip
+
+      - name: Packer Init
+        run: packer init packer/packer.pkr.hcl
+
+      - name: Packer FMT (Fail if not formatted)
+        run: packer fmt -check -diff packer/packer.pkr.hcl
+
+      - name: Packer Validate (Dummy Vars)
+        run: |
+          # create a dummy artifact so 'file' provisioner has a real source path
+          mkdir -p /tmp
+          echo "dummy" > /tmp/dummy.txt
+          zip -j /tmp/webapp.zip /tmp/dummy.txt
+
+          packer validate \
+            -var "app_artifact=/tmp/webapp.zip" \
+            -var "aws_demo_account_id=000000000000" \
+            -var "gcp_project_id=dummy-project" \
+            packer/packer.pkr.hcl
