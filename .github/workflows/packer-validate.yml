@@ -20,6 +20,8 @@ jobs:
         uses: hashicorp/setup-packer@v3
         with:
           packer_version: "1.10.3"
+      - name: Install zip
+        run: sudo apt-get update -y && sudo apt-get install -y zip
 
       - name: Packer Init
         run: packer init packer/packer.pkr.hcl
@@ -29,6 +31,11 @@ jobs:
 
       - name: Packer Validate (Dummy Vars)
         run: |
+          # create a dummy artifact so 'file' provisioner has a real source path
+          mkdir -p /tmp
+          echo "dummy" > /tmp/dummy.txt
+          zip -j /tmp/webapp.zip /tmp/dummy.txt
+
           packer validate \
             -var "app_artifact=/tmp/webapp.zip" \
             -var "aws_demo_account_id=000000000000" \

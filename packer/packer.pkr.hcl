@@ -65,7 +65,7 @@ source "googlecompute" "gcp_ubuntu_2404" {
   image_family            = "csye6225"
   image_description       = "CSYE6225 WebApp GCP Image"
   source_image_family     = "ubuntu-2404-lts"
-  source_image_project_id = "ubuntu-os-cloud"
+  source_image_project_id = ["ubuntu-os-cloud"]
 }
 
 build {
