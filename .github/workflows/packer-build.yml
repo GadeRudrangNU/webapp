@@ -120,8 +120,10 @@ jobs:
     steps:
       - name: Check GCP Secrets
         run: |
-          if [ -z "${{ secrets.GCP_SA_KEY }}" ] || [ -z "${{ secrets.GCP_DEV_PROJECT_ID }}" ]; then
-            echo "GCP secrets not set. Skipping GCP image build."
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ] || \
+             [ -z "${{ secrets.GCP_DEV_PROJECT_ID }}" ] || \
+             [ -z "${{ secrets.GCP_DEMO_PROJECT_NUMBER }}" ]; then
+            echo "GCP secrets not set (need GCP_SA_KEY, GCP_DEV_PROJECT_ID, GCP_DEMO_PROJECT_NUMBER). Skipping GCP image build."
             exit 0
           fi
 
@@ -158,3 +160,30 @@ jobs:
             -var "gcp_project_id=${{ secrets.GCP_DEV_PROJECT_ID }}" \
             -var "aws_demo_account_id=000000000000" \
             packer/packer.pkr.hcl
+
+      - name: Share latest image family with DEMO project
+        run: |
+          set -euo pipefail
+
+          DEV_PROJECT="${{ secrets.GCP_DEV_PROJECT_ID }}"
+          DEMO_PROJECT_NUMBER="${{ secrets.GCP_DEMO_PROJECT_NUMBER }}"
+
+          # Fetch newest image in family csye6225 (your packer config sets image_family = "csye6225")
+          IMAGE_NAME="$(gcloud compute images list \
+            --project "$DEV_PROJECT" \
+            --filter="family=csye6225" \
+            --sort-by="~creationTimestamp" \
+            --limit=1 \
+            --format="value(name)")"
+
+          if [ -z "$IMAGE_NAME" ]; then
+            echo "No image found in family csye6225 in project $DEV_PROJECT"
+            exit 1
+          fi
+
+          echo "Sharing image $IMAGE_NAME with DEMO project's default compute service account..."
+
+          gcloud compute images add-iam-policy-binding "$IMAGE_NAME" \
+            --project "$DEV_PROJECT" \
+            --member="serviceAccount:${DEMO_PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+            --role="roles/compute.imageUser"
