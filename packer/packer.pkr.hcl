@@ -64,7 +64,7 @@ source "googlecompute" "gcp_ubuntu_2404" {
   image_name              = "csye6225-gcp-{{timestamp}}"
   image_family            = "csye6225"
   image_description       = "CSYE6225 WebApp GCP Image"
-  source_image_family     = "ubuntu-2404-lts"
+  source_image_family     = "ubuntu-2404-lts-amd64"
   source_image_project_id = ["ubuntu-os-cloud"]
 }
 
