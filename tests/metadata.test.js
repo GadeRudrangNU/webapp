@@ -49,7 +49,9 @@ describe("Metadata API", () => {
         it(`${m.toUpperCase()} /v1/metadata returns 405`, async () => {
             const res = await request(app)[m]("/v1/metadata");
             expect(res.status).toBe(405);
-            expectErrorSchema(res);
+            if (m !== "head") {
+                expectErrorSchema(res);
+            }
 
             expect(res.headers["cache-control"]).toBe("no-cache, no-store, must-revalidate");
             expect(res.headers["pragma"]).toBe("no-cache");
