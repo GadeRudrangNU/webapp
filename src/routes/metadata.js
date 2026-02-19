@@ -7,15 +7,28 @@ const router = express.Router();
 router.use("/v1/metadata", express.raw({ type: "*/*" }));
 
 // --- helpers (use your existing Error schema helper if you have one) ---
-function badRequest(res, message) {
-    return res.status(400).json({ message });
+function errorResponse(req, res, status, error, message) {
+    setNoCache(res);
+    return res.status(status).json({
+        error,
+        message,
+        timestamp: new Date().toISOString(),
+        path: req.originalUrl.split("?")[0],
+    });
 }
-function methodNotAllowed(res) {
-    return res.status(405).end();
+
+function badRequest(req, res, message) {
+    return errorResponse(req, res, 400, "Bad Request", message);
 }
-function serviceUnavailable(res, message) {
-    return res.status(503).json({ message });
+
+function methodNotAllowed(req, res) {
+    return errorResponse(req, res, 405, "Method Not Allowed", "Only GET method is supported");
 }
+
+function serviceUnavailable(req, res, message) {
+    return errorResponse(req, res, 503, "Service Unavailable", message);
+}
+
 
 // Always add cache headers on ALL responses from this endpoint
 function setNoCache(res) {
@@ -27,7 +40,7 @@ function setNoCache(res) {
 function rejectQueryParams(req, res) {
     if (req.query && Object.keys(req.query).length > 0) {
         setNoCache(res);
-        return badRequest(res, "Query parameters are not allowed.");
+        return badRequest(req, res, "Query parameters are not allowed.");
     }
     return null;
 }
@@ -36,7 +49,7 @@ function rejectQueryParams(req, res) {
 function rejectBody(req, res) {
     if (req.body && Buffer.isBuffer(req.body) && req.body.length > 0) {
         setNoCache(res);
-        return badRequest(res, "Request body is not allowed.");
+        return badRequest(req, res, "Request body is not allowed.");
     }
     return null;
 }
@@ -263,7 +276,7 @@ async function buildGcpMetadataResponse() {
 router.all("/v1/metadata", (req, res, next) => {
     if (req.method !== "GET") {
         setNoCache(res);
-        return methodNotAllowed(res);
+        return methodNotAllowed(req, res);
     }
     return next();
 });
@@ -283,7 +296,7 @@ router.get("/v1/metadata", async (req, res) => {
     try {
         const platform = await detectPlatform();
         if (!platform) {
-            return serviceUnavailable(res, "Unsupported platform or metadata service not reachable.");
+            return serviceUnavailable(req, res, "Unable to retrieve instance metadata. The application may not be running on a supported cloud platform.");
         }
 
         const payload =
@@ -291,7 +304,7 @@ router.get("/v1/metadata", async (req, res) => {
 
         return res.status(200).type("application/json").json(payload);
     } catch (_) {
-        return serviceUnavailable(res, "Metadata service unavailable or required fields could not be retrieved.");
+        return serviceUnavailable(req, res, "Unable to retrieve instance metadata. The application may not be running on a supported cloud platform.");
     }
 });
 
