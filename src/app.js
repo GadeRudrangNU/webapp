@@ -4,6 +4,8 @@ const morgan = require("morgan");
 
 const healthzRoutes = require("./routes/healthz");
 const userRoutes = require("./routes/user");
+const courseRoutes = require("./routes/courses");
+const syllabusRoutes = require("./routes/syllabus");
 
 const app = express();
 const metadataRoute = require("./routes/metadata");
@@ -51,10 +53,16 @@ app.use("/healthz", healthzRoutes);
 
 
 app.use((req, res, next) => {
-  const isUserEndpoint = req.originalUrl.startsWith("/v1/user");
-  const needsJson = ["POST", "PUT"].includes(req.method);
+  const isSyllabusUpload =
+    req.method === "POST" &&
+    /^\/v1\/courses\/[^/]+\/syllabus$/.test(req.path);
 
-  if (isUserEndpoint && needsJson && !req.is("application/json")) {
+  const isJsonBodyEndpoint =
+    (req.originalUrl.startsWith("/v1/user") || req.originalUrl.startsWith("/v1/courses")) &&
+    ["POST", "PUT"].includes(req.method) &&
+    !isSyllabusUpload; // ✅ allow multipart/form-data for syllabus upload
+
+  if (isJsonBodyEndpoint && !req.is("application/json")) {
     return res.status(415).json({
       error: "Unsupported Media Type",
       message: "Content-Type must be application/json",
@@ -83,7 +91,8 @@ app.use((err, req, res, next) => {
 
 // Routes
 app.use("/v1/user", userRoutes);
-
+app.use("/v1/courses", courseRoutes);
+app.use("/v1/courses", syllabusRoutes);
 // 404 handler 
 app.use((req, res) => {
   return res.status(404).json({

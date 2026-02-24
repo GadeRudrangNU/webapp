@@ -3,7 +3,13 @@ const bcrypt = require("bcrypt");
 const { prisma } = require("../db");
 
 function unauthorized(res, req) {
-  res.set("WWW-Authenticate", 'Basic realm="Access to user account"');
+  // Swagger wants different realms depending on endpoint
+  const realm = req.originalUrl.startsWith("/v1/courses")
+    ? "Access to course catalog"
+    : "Access to user account";
+
+  res.set("WWW-Authenticate", `Basic realm="${realm}"`);
+
   return res.status(401).json({
     error: "Unauthorized",
     message: "Authentication credentials are missing or invalid",

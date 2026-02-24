@@ -13,6 +13,9 @@ model User {
   first_name      String
   last_name       String
   password        String
+  
+  is_verified     Boolean  @default(true)
+
   account_created DateTime @default(now())
   account_updated DateTime @updatedAt
 }
@@ -23,4 +26,43 @@ model HealthCheck {
 
   @@map("health_checks")
   @@index([check_datetime])
+}
+
+model Course {
+  id              String   @id @default(uuid())
+  department_code String
+  number          String
+  title           String
+  credit_hours    Int
+  classification  String
+  description     String?
+  prerequisites   String?
+
+  has_syllabus    Boolean  @default(false)
+
+  date_created    DateTime @default(now())
+  date_updated    DateTime @updatedAt
+
+  syllabus        Syllabus?
+
+  @@unique([department_code, number])
+  @@map("courses")
+}
+
+model Syllabus {
+  id            String   @id @default(uuid())
+  course_id     String   @unique
+  file_name     String
+  s3_bucket_name String
+  s3_object_key String
+  content_type  String
+  file_size     Int
+  url           String
+
+  date_created  DateTime @default(now())
+  date_updated  DateTime @updatedAt
+
+  course        Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+
+  @@map("syllabi")
 }
