@@ -20,7 +20,7 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-variable "aws_demo_accountid" {
+variable "aws_demo_account_id" {
   type = string
 }
 
