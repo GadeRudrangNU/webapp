@@ -6,21 +6,43 @@ const healthzRoutes = require("./routes/healthz");
 const userRoutes = require("./routes/user");
 const courseRoutes = require("./routes/courses");
 const syllabusRoutes = require("./routes/syllabus");
+const metadataRoute = require("./routes/metadata");
+
+const logger = require("./utils/logger");
+const { recordApiMetrics } = require("./utils/metrics");
 
 const app = express();
-const metadataRoute = require("./routes/metadata");
-app.use(metadataRoute);
 
 // Security headers
 app.use(helmet());
 
+// Request logging + API metrics
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  logger.info(`Incoming request: ${req.method} ${req.originalUrl}`);
+
+  res.on("finish", () => {
+    const durationMs = Date.now() - start;
+
+    logger.info(
+      `Request completed: ${req.method} ${req.originalUrl} ${res.statusCode} in ${durationMs} ms`
+    );
+
+    recordApiMetrics(req, durationMs);
+  });
+
+  next();
+});
+
+// Optional terminal access logs
 app.use((req, res, next) => {
   const originalJson = res.json.bind(res);
 
   res.json = (body) => {
     if (res.statusCode >= 400 && res.statusCode < 500 && body && body.error) {
       const msg = body.message ? ` | ${body.message}` : "";
-      console.log(`[APP] ${req.method} ${req.originalUrl} -> ${res.statusCode} ${body.error}${msg}`);
+      logger.warn(`${req.method} ${req.originalUrl} -> ${res.statusCode} ${body.error}${msg}`);
     }
     return originalJson(body);
   };
@@ -28,7 +50,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Status labels for nicer access logs for terminal
 morgan.token("statusLabel", (req, res) => {
   const map = {
     200: "OK",
@@ -48,9 +69,8 @@ morgan.token("statusLabel", (req, res) => {
 
 app.use(morgan(":method :url :status :statusLabel :response-time ms"));
 
-
+app.use(metadataRoute);
 app.use("/healthz", healthzRoutes);
-
 
 app.use((req, res, next) => {
   const isSyllabusUpload =
@@ -60,7 +80,7 @@ app.use((req, res, next) => {
   const isJsonBodyEndpoint =
     (req.originalUrl.startsWith("/v1/user") || req.originalUrl.startsWith("/v1/courses")) &&
     ["POST", "PUT"].includes(req.method) &&
-    !isSyllabusUpload; // ✅ allow multipart/form-data for syllabus upload
+    !isSyllabusUpload;
 
   if (isJsonBodyEndpoint && !req.is("application/json")) {
     return res.status(415).json({
@@ -79,6 +99,7 @@ app.use(express.json({ type: ["application/json", "*/json"] }));
 // Handle malformed JSON
 app.use((err, req, res, next) => {
   if (err && err.type === "entity.parse.failed") {
+    logger.warn(`Malformed JSON request body for ${req.method} ${req.originalUrl}`);
     return res.status(400).json({
       error: "Validation Error",
       message: "Malformed JSON request body",
@@ -93,8 +114,10 @@ app.use((err, req, res, next) => {
 app.use("/v1/user", userRoutes);
 app.use("/v1/courses", courseRoutes);
 app.use("/v1/courses", syllabusRoutes);
-// 404 handler 
+
+// 404 handler
 app.use((req, res) => {
+  logger.warn(`Resource not found: ${req.method} ${req.originalUrl}`);
   return res.status(404).json({
     error: "Not Found",
     message: "Resource not found",
@@ -103,13 +126,17 @@ app.use((req, res) => {
   });
 });
 
+// Final error handler
 app.use((err, req, res, next) => {
-  console.error(err);
-  if (res.headersSent) return next(err);
+  logger.error(err);
 
-  return res.status(500).json({
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  return res.status(err.status || 500).json({
     error: "Internal Server Error",
-    message: "An unexpected error occurred",
+    message: err.message || "An unexpected error occurred",
     timestamp: new Date().toISOString(),
     path: req.originalUrl,
   });
