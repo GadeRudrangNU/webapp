@@ -20,14 +20,24 @@ app.use(helmet());
 app.use((req, res, next) => {
   const start = Date.now();
 
-  logger.info(`Incoming request: ${req.method} ${req.originalUrl}`);
+  logger.info("Incoming request", {
+    module: "app",
+    function: "request_middleware",
+    method: req.method,
+    path: req.originalUrl
+  });
 
   res.on("finish", () => {
     const durationMs = Date.now() - start;
 
-    logger.info(
-      `Request completed: ${req.method} ${req.originalUrl} ${res.statusCode} in ${durationMs} ms`
-    );
+    logger.info("Request completed", {
+      module: "app",
+      function: "request_middleware",
+      method: req.method,
+      path: req.originalUrl,
+      statusCode: res.statusCode,
+      duration_ms: durationMs
+    });
 
     recordApiMetrics(req, durationMs);
   });
@@ -41,8 +51,14 @@ app.use((req, res, next) => {
 
   res.json = (body) => {
     if (res.statusCode >= 400 && res.statusCode < 500 && body && body.error) {
-      const msg = body.message ? ` | ${body.message}` : "";
-      logger.warn(`${req.method} ${req.originalUrl} -> ${res.statusCode} ${body.error}${msg}`);
+      logger.warn(body.error || "Client error response", {
+        module: "app",
+        function: "response_wrapper",
+        method: req.method,
+        path: req.originalUrl,
+        statusCode: res.statusCode,
+        details: body.message || undefined
+      });
     }
     return originalJson(body);
   };
@@ -99,7 +115,13 @@ app.use(express.json({ type: ["application/json", "*/json"] }));
 // Handle malformed JSON
 app.use((err, req, res, next) => {
   if (err && err.type === "entity.parse.failed") {
-    logger.warn(`Malformed JSON request body for ${req.method} ${req.originalUrl}`);
+    logger.warn("Malformed JSON request body", {
+      module: "app",
+      function: "json_parser",
+      method: req.method,
+      path: req.originalUrl
+    });
+
     return res.status(400).json({
       error: "Validation Error",
       message: "Malformed JSON request body",
@@ -117,7 +139,13 @@ app.use("/v1/courses", syllabusRoutes);
 
 // 404 handler
 app.use((req, res) => {
-  logger.warn(`Resource not found: ${req.method} ${req.originalUrl}`);
+  logger.warn("Resource not found", {
+    module: "app",
+    function: "not_found_handler",
+    method: req.method,
+    path: req.originalUrl
+  });
+
   return res.status(404).json({
     error: "Not Found",
     message: "Resource not found",
@@ -128,7 +156,13 @@ app.use((req, res) => {
 
 // Final error handler
 app.use((err, req, res, next) => {
-  logger.error(err);
+  logger.error(err.message || "Unhandled error", {
+    module: "app",
+    function: "error_handler",
+    method: req.method,
+    path: req.originalUrl,
+    stack: err.stack
+  });
 
   if (res.headersSent) {
     return next(err);
