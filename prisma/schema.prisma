@@ -8,16 +8,20 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  username        String   @unique
-  first_name      String
-  last_name       String
-  password        String
-  
-  is_verified     Boolean  @default(true)
+  id                         String   @id @default(uuid())
+  username                   String   @unique
+  first_name                 String
+  last_name                  String
+  password                   String
 
-  account_created DateTime @default(now())
-  account_updated DateTime @updatedAt
+  is_verified                Boolean  @default(false)
+
+  verification_token         String?  @unique
+  verification_token_created DateTime?
+  email_verified_at          DateTime?
+
+  account_created            DateTime @default(now())
+  account_updated            DateTime @updatedAt
 }
 
 model HealthCheck {

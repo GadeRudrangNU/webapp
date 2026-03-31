@@ -90,13 +90,19 @@ build {
   provisioner "shell" {
     script = "packer/scripts/install_postgres.sh"
   }
+
   # Install CloudWatch agent
   provisioner "shell" {
     script = "packer/scripts/install_cloudwatch_agent.sh"
   }
+
+  # Bake CloudWatch config into the image
+  provisioner "shell" {
+    script = "packer/scripts/configure_cloudwatch.sh"
+  }
+
   # Setup app + user + permissions + enable systemd
   provisioner "shell" {
     script = "packer/scripts/setup_app.sh"
   }
-
 }

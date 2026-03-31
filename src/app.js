@@ -7,6 +7,7 @@ const userRoutes = require("./routes/user");
 const courseRoutes = require("./routes/courses");
 const syllabusRoutes = require("./routes/syllabus");
 const metadataRoute = require("./routes/metadata");
+const verificationRoutes = require("./routes/verification");
 
 const logger = require("./utils/logger");
 const { recordApiMetrics } = require("./utils/metrics");
@@ -136,7 +137,7 @@ app.use((err, req, res, next) => {
 app.use("/v1/user", userRoutes);
 app.use("/v1/courses", courseRoutes);
 app.use("/v1/courses", syllabusRoutes);
-
+app.use(verificationRoutes);
 // 404 handler
 app.use((req, res) => {
   logger.warn("Resource not found", {
