@@ -86,7 +86,7 @@ build {
     destination = "/tmp/csye6225.service"
   }
 
-    # Install DB locally in image (assignment requirement)
+  # Install DB locally in image (assignment requirement)
   provisioner "shell" {
     script = "packer/scripts/install_postgres.sh"
   }
@@ -105,5 +105,4 @@ build {
   provisioner "shell" {
     script = "packer/scripts/setup_app.sh"
   }
-
 }
