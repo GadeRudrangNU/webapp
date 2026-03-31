@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const { z } = require("zod");
 const { prisma } = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { v4: uuidv4 } = require("uuid");
+const { publishUserVerification } = require("../services/sns");
 
 const router = express.Router();
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || "10", 10);
@@ -127,14 +129,41 @@ router.post("/", async (req, res, next) => {
 
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
+    const token = uuidv4();
+
     const user = await prisma.user.create({
       data: {
         username: normalizedUsername,
         password: hash,
         first_name,
         last_name,
+        is_verified: false,
+        verification_token: token,
+        verification_token_created: new Date(),
       },
     });
+
+    if (process.env.NODE_ENV !== "test") {
+      try {
+        await publishUserVerification({
+          email: user.username,
+          firstName: user.first_name,
+          token,
+        });
+      } catch (publishError) {
+        await prisma.user.delete({
+          where: { id: user.id },
+        });
+
+        return swaggerError(
+          res,
+          req,
+          503,
+          "Service Unavailable",
+          "Unable to process user creation at this time"
+        );
+      }
+    }
 
     res.set("Location", "/v1/user/self");
 
