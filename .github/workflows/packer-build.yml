@@ -146,15 +146,33 @@ jobs:
       - name: Wait for shared AMI to be visible in DEMO
         run: |
           AMI_ID="${{ needs.build-aws-ami.outputs.ami_id }}"
-          for i in {1..30}; do
-            if aws ec2 describe-images --image-ids "$AMI_ID" >/dev/null 2>&1; then
-              echo "AMI is visible in DEMO"
+
+          echo "Checking visibility of shared AMI $AMI_ID in DEMO..."
+
+          for i in {1..60}; do
+            IMAGE_ID=$(aws ec2 describe-images \
+              --executable-users self \
+              --filters "Name=image-id,Values=$AMI_ID" \
+              --query 'Images[0].ImageId' \
+              --output text 2>/dev/null || true)
+
+            STATE=$(aws ec2 describe-images \
+              --executable-users self \
+              --filters "Name=image-id,Values=$AMI_ID" \
+              --query 'Images[0].State' \
+              --output text 2>/dev/null || true)
+
+            echo "Attempt $i - ImageId: $IMAGE_ID - State: $STATE"
+
+            if [ "$IMAGE_ID" = "$AMI_ID" ] && [ "$STATE" = "available" ]; then
+              echo "Shared AMI is visible and available in DEMO"
               exit 0
             fi
-            echo "Waiting for AMI share to propagate to DEMO..."
+
             sleep 20
           done
-          echo "AMI did not become visible in DEMO in time"
+
+          echo "Shared AMI did not become visible in DEMO in time"
           exit 1
 
       - name: Get Launch Template ID and ASG name
