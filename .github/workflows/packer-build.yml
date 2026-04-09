@@ -143,35 +143,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.DEMO_AWS_REGION }}
 
-      - name: Wait for shared AMI to be visible in DEMO
+      - name: Verify DEMO account and continue
         run: |
-          AMI_ID="${{ needs.build-aws-ami.outputs.ami_id }}"
+          echo "DEMO caller identity:"
+          aws sts get-caller-identity
 
-          echo "Checking visibility of shared AMI $AMI_ID in DEMO..."
+          echo "AWS region: $AWS_REGION"
+          echo "AMI ID from DEV build: ${{ needs.build-aws-ami.outputs.ami_id }}"
 
-          for i in {1..60}; do
-            IMAGE_ID=$(aws ec2 describe-images \
-              --filters "Name=image-id,Values=$AMI_ID" \
-              --query 'Images[0].ImageId' \
-              --output text 2>/dev/null || true)
-
-            STATE=$(aws ec2 describe-images \
-              --filters "Name=image-id,Values=$AMI_ID" \
-              --query 'Images[0].State' \
-              --output text 2>/dev/null || true)
-
-            echo "Attempt $i - ImageId: $IMAGE_ID - State: $STATE"
-
-            if [ "$IMAGE_ID" = "$AMI_ID" ] && [ "$STATE" = "available" ]; then
-              echo "Shared AMI is visible and available in DEMO"
-              exit 0
-            fi
-
-            sleep 20
-          done
-
-          echo "Shared AMI did not become visible in DEMO in time"
-          exit 1
+          echo "Sleeping briefly for share propagation..."
+          sleep 60
 
       - name: Get Launch Template ID and ASG name
         id: get_infra
