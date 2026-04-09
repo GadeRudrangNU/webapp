@@ -151,13 +151,11 @@ jobs:
 
           for i in {1..60}; do
             IMAGE_ID=$(aws ec2 describe-images \
-              --executable-users self \
               --filters "Name=image-id,Values=$AMI_ID" \
               --query 'Images[0].ImageId' \
               --output text 2>/dev/null || true)
 
             STATE=$(aws ec2 describe-images \
-              --executable-users self \
               --filters "Name=image-id,Values=$AMI_ID" \
               --query 'Images[0].State' \
               --output text 2>/dev/null || true)
