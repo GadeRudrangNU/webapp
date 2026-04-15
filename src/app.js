@@ -88,6 +88,7 @@ app.use(morgan(":method :url :status :statusLabel :response-time ms"));
 
 app.use(metadataRoute);
 app.use("/healthz", healthzRoutes);
+app.use("/healthz123", healthzRoutes);
 
 app.use((req, res, next) => {
   const isSyllabusUpload =
