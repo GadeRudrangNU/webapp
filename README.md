@@ -1,4 +1,4 @@
-# CSYE 6225 – Cloud Native Web Application (Assignment 2)
+# CSYE 6225 – Cloud Native Web Application
 
 
 ## Tech Stack
